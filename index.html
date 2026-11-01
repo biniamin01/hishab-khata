@@ -155,17 +155,17 @@ async function askNotif(){if(!('Notification' in window))return toast('এই �
 // ---------- views ----------
 const ini=()=>((S.prof.name||(user&&user.displayName)||'আ').trim()[0]||'আ');
 const nameOf=()=>S.prof.name||(user&&user.displayName)||'বন্ধু';
-function avatar(){return `<button class="av" onclick="tab='more';render();scrollTo(0,0)" aria-label="প্রোফাইল">${user&&user.photoURL?`<img src="${esc(user.photoURL)}" alt="">`:esc(ini())}</button>`}
+function avatar(){return `<button class="av" onclick="tab='more';render();window.scrollTo(0,0)" aria-label="প্রোফাইল">${user&&user.photoURL?`<img src="${esc(user.photoURL)}" alt="">`:esc(ini())}</button>`}
 function render(){
   const A=$('#app');
   if(CONFIGURED&&!user&&!offline){A.innerHTML=`<div class="login"><h1>💰 হিসাব খাতা</h1><p>আয়-ব্যয়, ওয়ালেট, ধার-দেনা — গুগল অ্যাকাউন্টে নিরাপদ, যেকোনো ডিভাইসে একই ডাটা।</p><button class="btn" onclick="login()">Google দিয়ে লগইন করুন</button></div>`;return}
   if(!CONFIGURED&&!offline){A.innerHTML=`<div class="login"><h1>💰 হিসাব খাতা</h1><div class="warn">Firebase কনফিগ বসানো হয়নি, তাই গুগল লগইন ও ক্লাউড সিঙ্ক বন্ধ আছে। ফাইলের উপরের দিকে <b>FB</b> অংশে আপনার কনফিগ বসান।</div><button class="btn ghost" onclick="useOffline()">আপাতত এই ফোনেই চালান</button></div>`;return}
   const al=alerts(),urg=al.filter(x=>x.n<=1).length;
-  const bell=cls=>`<button class="ib" onclick="tab='rem';render();scrollTo(0,0)" aria-label="রিমাইন্ডার">🔔${urg?`<i>${B(urg)}</i>`:''}</button>`;
+  const bell=cls=>`<button class="ib" onclick="tab='rem';render();window.scrollTo(0,0)" aria-label="রিমাইন্ডার">🔔${urg?`<i>${B(urg)}</i>`:''}</button>`;
   const T={tx:'লেনদেন',loan:'ধার-দেনা',rem:'রিমাইন্ডার',more:'আরও'};
   const body={home:()=>home(al,bell),tx:txView,loan:loanView,rem:()=>remView(al),more:moreView}[tab]();
-  const nb=(k,i,t)=>`<button class="${tab===k?'on':''}" onclick="tab='${k}';render();scrollTo(0,0)"><b>${i}</b>${t}</button>`;
-  A.innerHTML=(ferr?`<div class="warn" style="margin:calc(env(safe-area-inset-top,0px) + 8px) 0 10px;position:relative;z-index:2"><b>⚠️ ডাটাবেস সংযোগে সমস্যা (${esc(ferr)})</b><br>${ferr==='permission-denied'?'Firebase → Firestore → Rules এ ঠিক নিয়ম বসিয়ে Publish করুন, তারপর পেজ রিফ্রেশ দিন।':ferr==='unavailable'?'ইন্টারনেট বা Firestore ডাটাবেস তৈরি হয়নি। Firestore Database → Create database করুন।':'Firestore ডাটাবেস তৈরি ও Rules ঠিক আছে কি না দেখুন।'}</div>`:'')+(tab==='home'?'':`<div class="ph"><h1>${T[tab]}</h1>${bell()}</div>`)+body+`<nav>${nb('home','🏠','হোম')}${nb('tx','🧾','লেনদেন')}<button class="plus" onclick="form('tx')" aria-label="নতুন লেনদেন">+</button>${nb('loan','🤝','ধার')}${nb('more','⚙️','আরও')}</nav>`;
+  const nb=(k,i,t)=>`<button class="${tab===k?'on':''}" onclick="tab='${k}';render();window.scrollTo(0,0)"><b>${i}</b>${t}</button>`;
+  A.innerHTML=(ferr?`<div class="warn" style="margin:calc(env(safe-area-inset-top,0px) + 8px) 0 10px;position:relative;z-index:2"><b>⚠️ ডাটাবেস সংযোগে সমস্যা (${esc(ferr)})</b><br>${ferr==='permission-denied'?'Firebase → Firestore → Rules এ ঠিক নিয়ম বসিয়ে Publish করুন, তারপর পেজ রিফ্রেশ দিন।':ferr==='unavailable'?'ইন্টারনেট বা Firestore ডাটাবেস তৈরি হয়নি। Firestore Database → Create database করুন।':'Firestore ডাটাবেস তৈরি ও Rules ঠিক আছে কি না দেখুন।'}</div>`:'')+(tab==='home'?'':`<div class="ph"><h1>${T[tab]}</h1>${bell()}</div>`)+body+`<nav>${nb('home','🏠','হোম')}${nb('tx','🧾','লেনদেন')}<button class="plus" onclick="openForm('tx')" aria-label="নতুন লেনদেন">+</button>${nb('loan','🤝','ধার')}${nb('more','⚙️','আরও')}</nav>`;
   notify()}
 const mnav=()=>`<div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 10px"><button class="chip" onclick="M=nm(M,-1);render()" aria-label="আগের মাস">‹</button><b>${ml(M)}</b><button class="chip" onclick="M=nm(M);render()" aria-label="পরের মাস">›</button></div>`;
 const alertBox=a=>`<div class="card alert ${a.n>=0?'soon':''}"><div style="font-weight:500">${a.txt}</div><div class="k">${when(a.n)} · ${D(a.d)}</div></div>`;
@@ -177,8 +177,8 @@ function home(al,bell){
   const s=stats(),cs={};s.mt.filter(t=>t.t==='out').forEach(t=>cs[t.c||'অন্যান্য']=(cs[t.c||'অন্যান্য']||0)+t.a);
   const cl=Object.entries(cs).sort((a,b)=>b[1]-a[1]).slice(0,8),rec=[...S.tx].sort((a,b)=>b.d.localeCompare(a.d)).slice(0,5),bl=Object.entries(S.bud).filter(([,l])=>l>0);
   return `<div class="hero"><div class="hr"><div><small>আসসালামু আলাইকুম 👋</small><b>${esc(nameOf())}</b></div><div style="display:flex;gap:8px">${bell()}${avatar()}</div></div><div class="l" style="margin-top:16px">মোট ব্যালেন্স</div><div class="big">${N(s.all)}</div><div class="sub"><div>${ml(M)} আয়<b>${N(s.inc)}</b></div><div>ব্যয়<b>${N(s.ex)}</b></div><div>সঞ্চয়<b>${N(s.inc-s.ex)}</b></div></div></div>
-  <div class="ws">${S.wal.map(w=>`<button class="wc" style="background:linear-gradient(145deg,${WT[w.t][2]},${WT[w.t][2]}cc)" onclick="form('wal','${w.id}')"><small>${WT[w.t][1]} ${esc(w.n)}</small><b>${N(wbal(w))}</b></button>`).join('')}<button class="wc add" onclick="form('wal')"><span style="font-size:26px">＋</span></button></div>
-  <div class="qa"><button onclick="form('tx',0,'out')"><b>💸</b>ব্যয়</button><button onclick="form('tx',0,'in')"><b>💰</b>আয়</button><button onclick="form('tx',0,'tf')"><b>🔁</b>ট্রান্সফার</button><button onclick="form('loan')"><b>🤝</b>ধার</button></div>
+  <div class="ws">${S.wal.map(w=>`<button class="wc" style="background:linear-gradient(145deg,${WT[w.t][2]},${WT[w.t][2]}cc)" onclick="openForm('wal','${w.id}')"><small>${WT[w.t][1]} ${esc(w.n)}</small><b>${N(wbal(w))}</b></button>`).join('')}<button class="wc add" onclick="openForm('wal')"><span style="font-size:26px">＋</span></button></div>
+  <div class="qa"><button onclick="openForm('tx',0,'out')"><b>💸</b>ব্যয়</button><button onclick="openForm('tx',0,'in')"><b>💰</b>আয়</button><button onclick="openForm('tx',0,'tf')"><b>🔁</b>ট্রান্সফার</button><button onclick="openForm('loan')"><b>🤝</b>ধার</button></div>
   <div class="row"><div class="card"><div class="k">আমি পাব</div><div class="v lend">${N(s.get)}</div></div><div class="card"><div class="k">আমি দেব</div><div class="v exp">${N(s.owe)}</div></div></div>
   ${al.slice(0,3).map(alertBox).join('')}${mnav()}
   <h2>খাত অনুযায়ী ব্যয়</h2><div class="card">${cl.length?donut(cl,s.ex):'<div class="empty">এ মাসে এখনো কোনো ব্যয় নেই</div>'}</div>
@@ -186,7 +186,7 @@ function home(al,bell){
   <h2>গত ৬ মাস</h2><div class="card">${bars()}</div>
   <h2>সাম্প্রতিক লেনদেন</h2><div class="card">${rec.length?rec.map(txRow).join(''):'<div class="empty">নিচের + বাটন চেপে প্রথম লেনদেন যোগ করুন</div>'}</div>`}
 function txRow(t){const tf=t.t==='tf';
-  return `<div class="item" onclick="form('tx','${t.id}')"><div class="dot">${tf?'🔁':CI[t.c]||'🏷️'}</div><div class="m"><div class="t">${tf?esc(wn(t.w))+' → '+esc(wn(t.w2)):esc(t.c||'অন্যান্য')}${t.n?' · '+esc(t.n):''}</div><div class="k">${D(t.d)}${tf?'':' · '+esc(wn(t.w))}</div></div><b class="${t.t==='in'?'inc':tf?'lend':'exp'}">${t.t==='in'?'+':tf?'':'−'}${N(t.a)}</b></div>`}
+  return `<div class="item" onclick="openForm('tx','${t.id}')"><div class="dot">${tf?'🔁':CI[t.c]||'🏷️'}</div><div class="m"><div class="t">${tf?esc(wn(t.w))+' → '+esc(wn(t.w2)):esc(t.c||'অন্যান্য')}${t.n?' · '+esc(t.n):''}</div><div class="k">${D(t.d)}${tf?'':' · '+esc(wn(t.w))}</div></div><b class="${t.t==='in'?'inc':tf?'lend':'exp'}">${t.t==='in'?'+':tf?'':'−'}${N(t.a)}</b></div>`}
 function txList(){const q=fQ.toLowerCase();
   const L=S.tx.filter(t=>(fQ?true:t.d.startsWith(M))&&(fT==='all'||t.t===fT)&&(!q||((t.c||'')+' '+(t.n||'')+' '+wn(t.w)+' '+t.a).toLowerCase().includes(q))).sort((a,b)=>b.d.localeCompare(a.d));
   return L.length?L.map(txRow).join('')+`<div class="k" style="text-align:center;padding-top:8px">${B(L.length)}টি · আয় ${N(sum(L,'in'))} · ব্যয় ${N(sum(L,'out'))}</div>`:'<div class="empty">কোনো লেনদেন নেই</div>'}
@@ -196,7 +196,7 @@ function loanView(){
   const L=S.loans.filter(l=>fL==='all'||l.k===fL).sort((a,b)=>(rest(b)>0)-(rest(a)>0)||b.d.localeCompare(a.d));
   const ppl={};S.loans.forEach(l=>{ppl[l.p]=(ppl[l.p]||0)+(l.k==='gave'?1:-1)*rest(l)});const pl=Object.entries(ppl).filter(([,v])=>v!==0);
   const ch=(k,t)=>`<button class="chip ${fL===k?'on':''}" onclick="fL='${k}';render()">${t}</button>`;
-  return `<button class="btn" style="width:100%;margin-bottom:12px" onclick="form('loan')">＋ নতুন ধারের হিসাব</button>
+  return `<button class="btn" style="width:100%;margin-bottom:12px" onclick="openForm('loan')">＋ নতুন ধারের হিসাব</button>
   ${pl.length?`<h2>ব্যক্তি অনুযায়ী বাকি</h2><div class="card">${pl.map(([p,v])=>`<div class="item" style="cursor:default"><div class="m t">${esc(p)}</div><b class="${v>0?'lend':'exp'}">${v>0?'পাব ':'দেব '}${N(Math.abs(v))}</b></div>`).join('')}</div>`:''}
   <div class="chips">${ch('all','সব')}${ch('gave','আমি দিয়েছি')}${ch('took','আমি নিয়েছি')}</div>
   ${L.length?L.map(l=>{const r=rest(l),pc=Math.min(100,paid(l)/l.a*100),n=l.due&&r>0?days(l.due):null;
@@ -208,7 +208,7 @@ function wa(id){const l=S.loans.find(x=>x.id===id);
   open('https://wa.me/?text='+encodeURIComponent(`আসসালামু আলাইকুম ${l.p}, আপনার কাছে আমার ${N(rest(l))} বাকি আছে${l.due?' (ফেরতের তারিখ '+D(l.due)+')':''}। সুবিধামতো দিয়ে দেবেন, ধন্যবাদ।`),'_blank')}
 function remView(al){
   const ok=('Notification' in window)&&Notification.permission==='granted',mine=[...S.rem].sort((a,b)=>a.done-b.done||a.d.localeCompare(b.d));
-  return `<button class="btn" style="width:100%;margin-bottom:12px" onclick="form('rem')">＋ নতুন রিমাইন্ডার</button>
+  return `<button class="btn" style="width:100%;margin-bottom:12px" onclick="openForm('rem')">＋ নতুন রিমাইন্ডার</button>
   <div class="card"><div style="margin-bottom:8px"><b>📅 অ্যাপ বন্ধ থাকলেও অ্যালার্ম</b><div class="k">ধারের ফেরতের তারিখ ও রিমাইন্ডার আপনার ফোনের ক্যালেন্ডারে যোগ হবে, সময়মতো ক্যালেন্ডার নিজেই বাজাবে।</div></div><button class="btn sm" onclick="ics()">ক্যালেন্ডারে যোগ করুন</button> ${ok?'':'<button class="btn sm ghost" onclick="askNotif()">নোটিফিকেশন চালু</button>'}</div>
   <h2>সামনের ৭ দিন ও বকেয়া</h2>${al.length?al.map(alertBox).join(''):'<div class="card empty">কোনো জরুরি রিমাইন্ডার নেই 🎉</div>'}
   <h2>আমার রিমাইন্ডার</h2><div class="card">${mine.length?mine.map(r=>`<div class="item" style="cursor:default"><input type="checkbox" style="width:20px;height:20px" ${r.done?'checked':''} onchange="tog('${r.id}')"><div class="m"><div class="t" style="${r.done?'text-decoration:line-through;color:var(--mut)':''}">${esc(r.t)}</div><div class="k">${D(r.d)}</div></div><button class="x" onclick="del('rem','${r.id}')">🗑</button></div>`).join(''):'<div class="empty">কোনো রিমাইন্ডার নেই</div>'}</div>`}
@@ -221,8 +221,8 @@ function ics(){
 function moreView(){
   const th=document.documentElement.dataset.th,tl=th==='dark'?'ডার্ক':th==='light'?'লাইট':'অটো';
   const it=(f,i,t,s)=>`<button class="set" onclick="${f}"><span>${i}</span><span style="flex:1">${t}<small>${s}</small></span></button>`,p=S.prof;
-  return `<div class="card"><div class="pf"><div class="av">${user&&user.photoURL?`<img src="${esc(user.photoURL)}" alt="">`:esc(ini())}</div><div style="flex:1;min-width:0"><b style="font-size:18px">${esc(nameOf())}</b><div class="k">${esc(p.phone||'')}${p.phone&&user?' · ':''}${esc(user&&user.email||(user?'':'শুধু এই ফোনে'))}</div></div><button class="btn sm ghost" onclick="form('prof')">সম্পাদনা</button></div></div>
-  <h2>আমার ওয়ালেট</h2><div class="card">${S.wal.map(w=>`<div class="item" onclick="form('wal','${w.id}')"><div class="dot" style="background:${WT[w.t][2]}22">${WT[w.t][1]}</div><div class="m"><div class="t">${esc(w.n)}</div><div class="k">${WT[w.t][0]}</div></div><b>${N(wbal(w))}</b></div>`).join('')}<button class="btn sm ghost" style="margin-top:10px" onclick="form('wal')">＋ ওয়ালেট যোগ করুন</button></div>
+  return `<div class="card"><div class="pf"><div class="av">${user&&user.photoURL?`<img src="${esc(user.photoURL)}" alt="">`:esc(ini())}</div><div style="flex:1;min-width:0"><b style="font-size:18px">${esc(nameOf())}</b><div class="k">${esc(p.phone||'')}${p.phone&&user?' · ':''}${esc(user&&user.email||(user?'':'শুধু এই ফোনে'))}</div></div><button class="btn sm ghost" onclick="openForm('prof')">সম্পাদনা</button></div></div>
+  <h2>আমার ওয়ালেট</h2><div class="card">${S.wal.map(w=>`<div class="item" onclick="openForm('wal','${w.id}')"><div class="dot" style="background:${WT[w.t][2]}22">${WT[w.t][1]}</div><div class="m"><div class="t">${esc(w.n)}</div><div class="k">${WT[w.t][0]}</div></div><b>${N(wbal(w))}</b></div>`).join('')}<button class="btn sm ghost" style="margin-top:10px" onclick="openForm('wal')">＋ ওয়ালেট যোগ করুন</button></div>
   <div class="card">${it('budForm()','🎯','মাসিক বাজেট','খাত ধরে খরচের সীমা')}${it('catForm()','🏷️','আমার খাত','নিজের খাত যোগ করুন')}${it('recList()','🔁','নিয়মিত লেনদেন',B(S.rec.length)+'টি — প্রতি মাসে নিজে যোগ হবে')}${it('ics()','📅','ক্যালেন্ডার অ্যালার্ম','অ্যাপ বন্ধ থাকলেও রিমাইন্ড করবে')}${it('askNotif()','🔔','নোটিফিকেশন','অ্যাপ খুললে বকেয়া ও বাজেট সতর্কতা')}${it('cycTh()','🌗','থিম','এখন: '+tl)}</div>
   <div class="card">${it('csv()','📄','CSV এক্সপোর্ট','Excel-এ খোলা যাবে')}${it('backup()','💾','ব্যাকআপ নিন','JSON ফাইল ডাউনলোড')}${it("$('#rf').click()",'📥','ব্যাকআপ রিস্টোর','ফাইল থেকে ডাটা ফেরত আনুন')}${inst?it('inst.prompt()','📲','হোম স্ক্রিনে যোগ করুন','অ্যাপের মতো চালান'):''}${it('wipe()','⚠️','সব ডাটা মুছুন','এটি ফেরত আনা যাবে না')}</div>
   ${user?`<button class="btn red" style="width:100%" onclick="logout()">লগআউট</button>`:''}`}
@@ -245,7 +245,7 @@ const val=i=>$('#'+i).value.trim();
 const rad=(a,c,fn='')=>`<div class="tog">${a.map(([v,l])=>`<label><input type="radio" name="tt" value="${v}" ${c===v?'checked':''} ${fn}><span>${l}</span></label>`).join('')}</div>`;
 const sel=(id,v)=>`<select id="${id}">${S.wal.map(w=>`<option value="${w.id}" ${w.id===v?'selected':''}>${esc(w.n)}</option>`).join('')}</select>`;
 const tt=()=>document.querySelector('[name=tt]:checked').value;
-function form(k,id,ty){
+function openForm(k,id,ty){
   if(k==='tx'){const o=S.tx.find(x=>x.id===id)||{t:ty||'out',a:'',c:'',n:'',d:today(),w:S.wal[0].id,w2:''};X=o;CC=o.c;
     sheet(`<h2>${id?'লেনদেন সম্পাদনা':'নতুন লেনদেন'}</h2>${rad([['out','ব্যয়'],['in','আয়'],['tf','ট্রান্সফার']],o.t,'onchange="fx()"')}
     <label>টাকার পরিমাণ</label><input id="a" type="number" inputmode="decimal" min="0" value="${o.a}"><div id="fx"></div>
