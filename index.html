@@ -83,7 +83,7 @@ const nm=(m,n=1)=>{const d=new Date(m+'-01T00:00');d.setMonth(d.getMonth()+n);re
 const ml=m=>new Date(m+'-01T00:00').toLocaleDateString('bn-BD',{month:'long',year:'numeric'});
 const CONFIGURED=FB.apiKey!=="YOUR_API_KEY";
 const EMPTY=()=>({tx:[],loans:[],rem:[],bud:{},rec:[],wal:[],cc:{in:[],out:[]},prof:{}});
-let S=EMPTY(),user=null,ref=null,tab='home',fT='all',fL='all',fQ='',M=today().slice(0,7),offline=false,db,auth,notified=false,inst=null,CC='',X={};
+let S=EMPTY(),user=null,ref=null,tab='home',fT='all',fL='all',fQ='',M=today().slice(0,7),offline=false,db,auth,notified=false,inst=null,CC='',X={},ferr='';
 const LK='hk_local';
 // ওয়ালেট: [নাম, আইকন, রঙ]
 const WT={cash:['ক্যাশ','💵','#16a34a'],bkash:['বিকাশ','📱','#e2136e'],nagad:['নগদ','📱','#f26522'],rocket:['রকেট','📱','#8c3494'],upay:['উপায়','📱','#1b75bc'],tap:['ট্যাপ','📱','#00a651'],okw:['ওকে ওয়ালেট','📱','#c2185b'],sure:['শিওরক্যাশ','📱','#0d6efd'],mcash:['এমক্যাশ','📱','#ea580c'],dak:['ডাক নগদ','📮','#dc2626'],bank:['ব্যাংক অ্যাকাউন্ট','🏦','#1e3a8a'],dbbl:['ডাচ-বাংলা ব্যাংক','🏦','#0f766e'],brac:['ব্র্যাক ব্যাংক','🏦','#0369a1'],islami:['ইসলামী ব্যাংক','🏦','#15803d'],city:['সিটি ব্যাংক','🏦','#b91c1c'],card:['ডেবিট/ক্রেডিট কার্ড','💳','#334155'],sav:['ডিপিএস/সঞ্চয়','🐷','#0d9488']};
@@ -110,18 +110,19 @@ function fix(){
   return ch}
 function load(){try{S={...EMPTY(),...JSON.parse(localStorage.getItem(LK)||'{}')}}catch(e){}fix()}
 function save(){
-  if(ref)ref.set(S).catch(()=>toast('সিঙ্ক হয়নি, ইন্টারনেট চেক করুন'));
+  if(ref)ref.set(S).catch(e=>{ferr=e.code||'error';render()});
   else try{localStorage.setItem(LK,JSON.stringify(S))}catch(e){}
   render();
 }
 function toast(m){alert(m)}
+fix();
 if(CONFIGURED){
   firebase.initializeApp(FB);auth=firebase.auth();db=firebase.firestore();
   db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
   auth.getRedirectResult().catch(()=>{});
   auth.onAuthStateChanged(u=>{user=u;
     if(u){ref=db.collection('users').doc(u.uid);
-      ref.onSnapshot(d=>{if(d.exists){S={...EMPTY(),...d.data()};if(fix())ref.set(S)}else{load();ref.set(S)}render()},()=>render());
+      ref.onSnapshot(d=>{ferr='';if(d.exists){S={...EMPTY(),...d.data()};if(fix())ref.set(S)}else{load();ref.set(S)}render()},e=>{ferr=e.code||'error';fix();render()});
     }else{ref=null;render()}});
 }else render();
 function login(){const p=new firebase.auth.GoogleAuthProvider();auth.signInWithPopup(p).catch(e=>{if(e.code!=='auth/popup-closed-by-user')auth.signInWithRedirect(p)})}
@@ -164,7 +165,7 @@ function render(){
   const T={tx:'লেনদেন',loan:'ধার-দেনা',rem:'রিমাইন্ডার',more:'আরও'};
   const body={home:()=>home(al,bell),tx:txView,loan:loanView,rem:()=>remView(al),more:moreView}[tab]();
   const nb=(k,i,t)=>`<button class="${tab===k?'on':''}" onclick="tab='${k}';render();scrollTo(0,0)"><b>${i}</b>${t}</button>`;
-  A.innerHTML=(tab==='home'?'':`<div class="ph"><h1>${T[tab]}</h1>${bell()}</div>`)+body+`<nav>${nb('home','🏠','হোম')}${nb('tx','🧾','লেনদেন')}<button class="plus" onclick="form('tx')" aria-label="নতুন লেনদেন">+</button>${nb('loan','🤝','ধার')}${nb('more','⚙️','আরও')}</nav>`;
+  A.innerHTML=(ferr?`<div class="warn" style="margin:calc(env(safe-area-inset-top,0px) + 8px) 0 10px;position:relative;z-index:2"><b>⚠️ ডাটাবেস সংযোগে সমস্যা (${esc(ferr)})</b><br>${ferr==='permission-denied'?'Firebase → Firestore → Rules এ ঠিক নিয়ম বসিয়ে Publish করুন, তারপর পেজ রিফ্রেশ দিন।':ferr==='unavailable'?'ইন্টারনেট বা Firestore ডাটাবেস তৈরি হয়নি। Firestore Database → Create database করুন।':'Firestore ডাটাবেস তৈরি ও Rules ঠিক আছে কি না দেখুন।'}</div>`:'')+(tab==='home'?'':`<div class="ph"><h1>${T[tab]}</h1>${bell()}</div>`)+body+`<nav>${nb('home','🏠','হোম')}${nb('tx','🧾','লেনদেন')}<button class="plus" onclick="form('tx')" aria-label="নতুন লেনদেন">+</button>${nb('loan','🤝','ধার')}${nb('more','⚙️','আরও')}</nav>`;
   notify()}
 const mnav=()=>`<div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 10px"><button class="chip" onclick="M=nm(M,-1);render()" aria-label="আগের মাস">‹</button><b>${ml(M)}</b><button class="chip" onclick="M=nm(M);render()" aria-label="পরের মাস">›</button></div>`;
 const alertBox=a=>`<div class="card alert ${a.n>=0?'soon':''}"><div style="font-weight:500">${a.txt}</div><div class="k">${when(a.n)} · ${D(a.d)}</div></div>`;
