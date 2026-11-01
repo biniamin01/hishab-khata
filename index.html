@@ -83,7 +83,7 @@ const nm=(m,n=1)=>{const d=new Date(m+'-01T00:00');d.setMonth(d.getMonth()+n);re
 const ml=m=>new Date(m+'-01T00:00').toLocaleDateString('bn-BD',{month:'long',year:'numeric'});
 const CONFIGURED=FB.apiKey!=="YOUR_API_KEY";
 const EMPTY=()=>({tx:[],loans:[],rem:[],bud:{},rec:[],wal:[],cc:{in:[],out:[]},prof:{}});
-let S=EMPTY(),user=null,ref=null,tab='home',fT='all',fL='all',fQ='',M=today().slice(0,7),offline=false,db,auth,notified=false,inst=null,CC='',X={},ferr='';
+let S=EMPTY(),user=null,ref=null,tab='home',fT='all',fL='all',fQ='',M=today().slice(0,7),offline=false,db,auth,notified=false,inst=null,CC='',X={},ferr='',loaded=false;
 const LK='hk_local';
 // ওয়ালেট: [নাম, আইকন, রঙ]
 const WT={cash:['ক্যাশ','💵','#16a34a'],bkash:['বিকাশ','📱','#e2136e'],nagad:['নগদ','📱','#f26522'],rocket:['রকেট','📱','#8c3494'],upay:['উপায়','📱','#1b75bc'],tap:['ট্যাপ','📱','#00a651'],okw:['ওকে ওয়ালেট','📱','#c2185b'],sure:['শিওরক্যাশ','📱','#0d6efd'],mcash:['এমক্যাশ','📱','#ea580c'],dak:['ডাক নগদ','📮','#dc2626'],bank:['ব্যাংক অ্যাকাউন্ট','🏦','#1e3a8a'],dbbl:['ডাচ-বাংলা ব্যাংক','🏦','#0f766e'],brac:['ব্র্যাক ব্যাংক','🏦','#0369a1'],islami:['ইসলামী ব্যাংক','🏦','#15803d'],city:['সিটি ব্যাংক','🏦','#b91c1c'],card:['ডেবিট/ক্রেডিট কার্ড','💳','#334155'],sav:['ডিপিএস/সঞ্চয়','🐷','#0d9488']};
@@ -115,14 +115,16 @@ function save(){
   render();
 }
 function toast(m){alert(m)}
+addEventListener('error',e=>{if(ferr)return;ferr='js: '+(e.message||'error');try{render()}catch(_){}});
+addEventListener('unhandledrejection',e=>{if(ferr)return;ferr='js: '+((e.reason&&e.reason.message)||'promise');try{render()}catch(_){}});
 fix();
 if(CONFIGURED){
   firebase.initializeApp(FB);auth=firebase.auth();db=firebase.firestore();
   db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
   auth.getRedirectResult().catch(()=>{});
   auth.onAuthStateChanged(u=>{user=u;
-    if(u){ref=db.collection('users').doc(u.uid);
-      ref.onSnapshot(d=>{ferr='';if(d.exists){S={...EMPTY(),...d.data()};if(fix())ref.set(S)}else{load();ref.set(S)}render()},e=>{ferr=e.code||'error';fix();render()});
+    if(u){ref=db.collection('users').doc(u.uid);loaded=false;render();
+      ref.onSnapshot(d=>{ferr='';loaded=true;if(d.exists){S={...EMPTY(),...d.data()};if(fix())ref.set(S)}else{load();ref.set(S)}render()},e=>{ferr=e.code||'error';loaded=true;fix();render()});
     }else{ref=null;render()}});
 }else render();
 function login(){const p=new firebase.auth.GoogleAuthProvider();auth.signInWithPopup(p).catch(e=>{if(e.code!=='auth/popup-closed-by-user')auth.signInWithRedirect(p)})}
@@ -160,12 +162,13 @@ function render(){
   const A=$('#app');
   if(CONFIGURED&&!user&&!offline){A.innerHTML=`<div class="login"><h1>💰 হিসাব খাতা</h1><p>আয়-ব্যয়, ওয়ালেট, ধার-দেনা — গুগল অ্যাকাউন্টে নিরাপদ, যেকোনো ডিভাইসে একই ডাটা।</p><button class="btn" onclick="login()">Google দিয়ে লগইন করুন</button></div>`;return}
   if(!CONFIGURED&&!offline){A.innerHTML=`<div class="login"><h1>💰 হিসাব খাতা</h1><div class="warn">Firebase কনফিগ বসানো হয়নি, তাই গুগল লগইন ও ক্লাউড সিঙ্ক বন্ধ আছে। ফাইলের উপরের দিকে <b>FB</b> অংশে আপনার কনফিগ বসান।</div><button class="btn ghost" onclick="useOffline()">আপাতত এই ফোনেই চালান</button></div>`;return}
+  if(user&&!loaded){A.innerHTML=`<div class="login"><h1>⏳</h1><p>ডাটা লোড হচ্ছে… ইন্টারনেট চালু আছে কি না দেখুন। ১০ সেকেন্ডের বেশি লাগলে Firebase-এ Firestore Database তৈরি আছে কি না দেখুন।</p><div class="k">সংস্করণ ৩</div></div>`;return}
   const al=alerts(),urg=al.filter(x=>x.n<=1).length;
   const bell=cls=>`<button class="ib" onclick="tab='rem';render();window.scrollTo(0,0)" aria-label="রিমাইন্ডার">🔔${urg?`<i>${B(urg)}</i>`:''}</button>`;
   const T={tx:'লেনদেন',loan:'ধার-দেনা',rem:'রিমাইন্ডার',more:'আরও'};
   const body={home:()=>home(al,bell),tx:txView,loan:loanView,rem:()=>remView(al),more:moreView}[tab]();
   const nb=(k,i,t)=>`<button class="${tab===k?'on':''}" onclick="tab='${k}';render();window.scrollTo(0,0)"><b>${i}</b>${t}</button>`;
-  A.innerHTML=(ferr?`<div class="warn" style="margin:calc(env(safe-area-inset-top,0px) + 8px) 0 10px;position:relative;z-index:2"><b>⚠️ ডাটাবেস সংযোগে সমস্যা (${esc(ferr)})</b><br>${ferr==='permission-denied'?'Firebase → Firestore → Rules এ ঠিক নিয়ম বসিয়ে Publish করুন, তারপর পেজ রিফ্রেশ দিন।':ferr==='unavailable'?'ইন্টারনেট বা Firestore ডাটাবেস তৈরি হয়নি। Firestore Database → Create database করুন।':'Firestore ডাটাবেস তৈরি ও Rules ঠিক আছে কি না দেখুন।'}</div>`:'')+(tab==='home'?'':`<div class="ph"><h1>${T[tab]}</h1>${bell()}</div>`)+body+`<nav>${nb('home','🏠','হোম')}${nb('tx','🧾','লেনদেন')}<button class="plus" onclick="openForm('tx')" aria-label="নতুন লেনদেন">+</button>${nb('loan','🤝','ধার')}${nb('more','⚙️','আরও')}</nav>`;
+  A.innerHTML=(ferr?`<div class="warn" style="margin:calc(env(safe-area-inset-top,0px) + 8px) 0 10px;position:relative;z-index:2"><b>⚠️ ডাটাবেস সংযোগে সমস্যা (${esc(ferr)})</b><br>${ferr.startsWith('js:')?'অ্যাপের ভেতরে ত্রুটি হয়েছে, এই লেখার স্ক্রিনশট পাঠান।':ferr==='permission-denied'?'Firebase → Firestore → Rules এ ঠিক নিয়ম বসিয়ে Publish করুন, তারপর পেজ রিফ্রেশ দিন।':ferr==='unavailable'?'ইন্টারনেট বা Firestore ডাটাবেস তৈরি হয়নি। Firestore Database → Create database করুন।':'Firestore ডাটাবেস তৈরি ও Rules ঠিক আছে কি না দেখুন।'}</div>`:'')+(tab==='home'?'':`<div class="ph"><h1>${T[tab]}</h1>${bell()}</div>`)+body+`<nav>${nb('home','🏠','হোম')}${nb('tx','🧾','লেনদেন')}<button class="plus" onclick="openForm('tx')" aria-label="নতুন লেনদেন">+</button>${nb('loan','🤝','ধার')}${nb('more','⚙️','আরও')}</nav>`;
   notify()}
 const mnav=()=>`<div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 10px"><button class="chip" onclick="M=nm(M,-1);render()" aria-label="আগের মাস">‹</button><b>${ml(M)}</b><button class="chip" onclick="M=nm(M);render()" aria-label="পরের মাস">›</button></div>`;
 const alertBox=a=>`<div class="card alert ${a.n>=0?'soon':''}"><div style="font-weight:500">${a.txt}</div><div class="k">${when(a.n)} · ${D(a.d)}</div></div>`;
@@ -225,7 +228,7 @@ function moreView(){
   <h2>আমার ওয়ালেট</h2><div class="card">${S.wal.map(w=>`<div class="item" onclick="openForm('wal','${w.id}')"><div class="dot" style="background:${WT[w.t][2]}22">${WT[w.t][1]}</div><div class="m"><div class="t">${esc(w.n)}</div><div class="k">${WT[w.t][0]}</div></div><b>${N(wbal(w))}</b></div>`).join('')}<button class="btn sm ghost" style="margin-top:10px" onclick="openForm('wal')">＋ ওয়ালেট যোগ করুন</button></div>
   <div class="card">${it('budForm()','🎯','মাসিক বাজেট','খাত ধরে খরচের সীমা')}${it('catForm()','🏷️','আমার খাত','নিজের খাত যোগ করুন')}${it('recList()','🔁','নিয়মিত লেনদেন',B(S.rec.length)+'টি — প্রতি মাসে নিজে যোগ হবে')}${it('ics()','📅','ক্যালেন্ডার অ্যালার্ম','অ্যাপ বন্ধ থাকলেও রিমাইন্ড করবে')}${it('askNotif()','🔔','নোটিফিকেশন','অ্যাপ খুললে বকেয়া ও বাজেট সতর্কতা')}${it('cycTh()','🌗','থিম','এখন: '+tl)}</div>
   <div class="card">${it('csv()','📄','CSV এক্সপোর্ট','Excel-এ খোলা যাবে')}${it('backup()','💾','ব্যাকআপ নিন','JSON ফাইল ডাউনলোড')}${it("$('#rf').click()",'📥','ব্যাকআপ রিস্টোর','ফাইল থেকে ডাটা ফেরত আনুন')}${inst?it('inst.prompt()','📲','হোম স্ক্রিনে যোগ করুন','অ্যাপের মতো চালান'):''}${it('wipe()','⚠️','সব ডাটা মুছুন','এটি ফেরত আনা যাবে না')}</div>
-  ${user?`<button class="btn red" style="width:100%" onclick="logout()">লগআউট</button>`:''}`}
+  ${user?`<button class="btn red" style="width:100%" onclick="logout()">লগআউট</button>`:''}<div class="k" style="text-align:center;margin-top:14px">সংস্করণ ৩</div>`}
 function cycTh(){const r=document.documentElement,c=r.dataset.th,n=!c?'dark':c==='dark'?'light':'';
   if(n)r.dataset.th=n;else delete r.dataset.th;try{n?localStorage.setItem('hk_th',n):localStorage.removeItem('hk_th')}catch(e){}render()}
 function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click()}
